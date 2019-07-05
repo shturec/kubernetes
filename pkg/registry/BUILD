@@ -31,6 +31,7 @@ filegroup(
         "//pkg/registry/apps/replicaset:all-srcs",
         "//pkg/registry/apps/rest:all-srcs",
         "//pkg/registry/apps/statefulset:all-srcs",
+        "//pkg/registry/auditregistration/auditclass:all-srcs",
         "//pkg/registry/auditregistration/auditsink:all-srcs",
         "//pkg/registry/auditregistration/rest:all-srcs",
         "//pkg/registry/authentication/rest:all-srcs",

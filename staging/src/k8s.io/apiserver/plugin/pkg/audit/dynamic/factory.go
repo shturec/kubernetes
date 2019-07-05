@@ -38,9 +38,11 @@ type factory struct {
 	config               *Config
 	webhookClientManager webhook.ClientManager
 	sink                 *auditregv1alpha1.AuditSink
+	auditClasses         []*auditregv1alpha1.AuditClass
 }
 
-// BuildDelegate creates a delegate from the AuditSink object
+// BuildDelegate creates a delegate from the AuditSink object 
+// and the AuditClass objects it references
 func (f *factory) BuildDelegate() (*delegate, error) {
 	backend, err := f.buildWebhookBackend()
 	if err != nil {
@@ -52,6 +54,7 @@ func (f *factory) BuildDelegate() (*delegate, error) {
 	return &delegate{
 		Backend:       backend,
 		configuration: f.sink,
+		auditClasses:  f.auditClasses,
 		stopChan:      ch,
 	}, nil
 }
@@ -67,7 +70,7 @@ func (f *factory) buildWebhookBackend() (audit.Backend, error) {
 }
 
 func (f *factory) applyEnforcedOpts(delegate audit.Backend) audit.Backend {
-	pol := policy.ConvertDynamicPolicyToInternal(&f.sink.Spec.Policy)
+	pol := policy.ConvertDynamicPolicyToInternal(&f.sink.Spec.Policy, f.auditClasses)
 	checker := policy.NewChecker(pol)
 	eb := enforcedplugin.NewBackend(delegate, checker)
 	return eb
