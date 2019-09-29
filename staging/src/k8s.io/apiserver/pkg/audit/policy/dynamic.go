@@ -25,17 +25,14 @@ import (
 // ConvertDynamicPolicyToInternal constructs an internal policy type from a
 // v1alpha1 dynamic type
 func ConvertDynamicPolicyToInternal(p *v1alpha1.Policy) *audit.Policy {
-	stages := make([]audit.Stage, len(p.Stages))
-	for i, stage := range p.Stages {
-		stages[i] = audit.Stage(stage)
-	}
 	return &audit.Policy{
 		Rules: []audit.PolicyRule{
 			{
 				Level: audit.Level(p.Level),
 			},
 		},
-		OmitStages: InvertStages(stages),
+		OmitStages: []audit.Stage{audit.StageRequestReceived},
+		// TODO: add rules
 	}
 }
 

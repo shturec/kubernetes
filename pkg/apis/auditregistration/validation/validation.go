@@ -19,6 +19,7 @@ package validation
 import (
 	"strings"
 
+	"k8s.io/apimachinery/pkg/api/validation"
 	genericvalidation "k8s.io/apimachinery/pkg/api/validation"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -75,10 +76,42 @@ func ValidateWebhookThrottleConfig(c *auditregistration.WebhookThrottleConfig, f
 // ValidatePolicy validates the audit policy
 func ValidatePolicy(policy auditregistration.Policy, fldPath *field.Path) field.ErrorList {
 	var allErrs field.ErrorList
-	allErrs = append(allErrs, validateStages(policy.Stages, fldPath.Child("stages"))...)
 	allErrs = append(allErrs, validateLevel(policy.Level, fldPath.Child("level"))...)
-	if policy.Level != auditregistration.LevelNone && len(policy.Stages) == 0 {
-		return field.ErrorList{field.Required(fldPath.Child("stages"), "")}
+	for _, rule := range policy.Rules {
+		allErrs = append(allErrs, validatePolicyRule(rule, fldPath.Child("rules"))...)
+	}
+	return allErrs
+}
+
+func validatePolicyRule(policyRule auditregistration.PolicyRule, fldPath *field.Path) field.ErrorList {
+	var allErrs field.ErrorList
+	if policyRule.WithAuditClass == "" {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("withAuditClass"), policyRule.WithAuditClass, "withAuditClass cannot be blank"))
+	}
+	allErrs = append(allErrs, validateLevel(policyRule.Level, fldPath.Child("level"))...)
+
+	return allErrs
+}
+
+// ValidateAuditClass validates the AuditClass
+func ValidateAuditClass(class auditregistration.AuditClass) field.ErrorList {
+	var allErrs field.ErrorList
+	fldPath := field.NewPath("spec")
+
+	// Having all selectors empty is like not selecting any particular request. 
+	// There is an implicit catch-all rule assigned the global level that does that. 
+	// Explict definition of roles that do the same is discouraged.
+	if len(class.Spec.RequestSelectors)==0 && len(class.Spec.ResourceSelectors)==0 && len(class.Spec.ClusterResourceSelectors)==0 && len(class.Spec.NonResourceSelectors)==0 {
+		allErrs = append(allErrs, field.Invalid(fldPath, class.Spec, "at least one selector is required"))
+	}
+	for _, resourceSelector := range class.Spec.ResourceSelectors {
+		allErrs = append(allErrs, validateResources(resourceSelector.Resources, fldPath.Child("resourceSelectors").Child("resources"))...)	
+	}
+	for _, clusterResourceSelector := range class.Spec.ClusterResourceSelectors {
+		allErrs = append(allErrs, validateResources(clusterResourceSelector.Resources, fldPath.Child("clusterResourceSelector").Child("resources"))...)
+	}
+	for _, nonResourceSelector := range class.Spec.NonResourceSelectors {
+		allErrs = append(allErrs, validateNonResourceURLs(nonResourceSelector.NonResourceURLs, fldPath.Child("nonResourceSelectors").Child("nonResourceURLs"))...)
 	}
 	return allErrs
 }
@@ -88,13 +121,6 @@ var validLevels = sets.NewString(
 	string(auditregistration.LevelMetadata),
 	string(auditregistration.LevelRequest),
 	string(auditregistration.LevelRequestResponse),
-)
-
-var validStages = sets.NewString(
-	string(auditregistration.StageRequestReceived),
-	string(auditregistration.StageResponseStarted),
-	string(auditregistration.StageResponseComplete),
-	string(auditregistration.StagePanic),
 )
 
 func validateLevel(level auditregistration.Level, fldPath *field.Path) field.ErrorList {
@@ -107,11 +133,40 @@ func validateLevel(level auditregistration.Level, fldPath *field.Path) field.Err
 	return nil
 }
 
-func validateStages(stages []auditregistration.Stage, fldPath *field.Path) field.ErrorList {
+func validateNonResourceURLs(urls []string, fldPath *field.Path) field.ErrorList {
 	var allErrs field.ErrorList
-	for i, stage := range stages {
-		if !validStages.Has(string(stage)) {
-			allErrs = append(allErrs, field.Invalid(fldPath.Index(i), string(stage), "allowed stages are "+strings.Join(validStages.List(), ",")))
+	for i, url := range urls {
+		if url == "*" {
+			continue
+		}
+
+		if !strings.HasPrefix(url, "/") {
+			allErrs = append(allErrs, field.Invalid(fldPath.Index(i), url, "non-resource URL rules must begin with a '/' character"))
+		}
+
+		if url != "" && strings.ContainsRune(url[:len(url)-1], '*') {
+			allErrs = append(allErrs, field.Invalid(fldPath.Index(i), url, "non-resource URL wildcards '*' must be the final character of the rule"))
+		}
+	}
+	return allErrs
+}
+
+func validateResources(groupResources []auditregistration.GroupResources, fldPath *field.Path) field.ErrorList {
+	var allErrs field.ErrorList
+	for _, groupResource := range groupResources {
+		// The empty string represents the core API group.
+		if len(groupResource.Group) != 0 {
+			// Group names must be lower case and be valid DNS subdomains.
+			// reference: https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md
+			// an error is returned for group name like rbac.authorization.k8s.io/v1beta1
+			// rbac.authorization.k8s.io is the valid one
+			if msgs := validation.NameIsDNSSubdomain(groupResource.Group, false); len(msgs) != 0 {
+				allErrs = append(allErrs, field.Invalid(fldPath.Child("group"), groupResource.Group, strings.Join(msgs, ",")))
+			}
+		}
+
+		if len(groupResource.ObjectNames) > 0 && len(groupResource.Resources) == 0 {
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("objectNames"), groupResource.ObjectNames, "using objectNames requires at least one resource"))
 		}
 	}
 	return allErrs

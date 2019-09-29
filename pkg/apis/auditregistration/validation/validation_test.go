@@ -44,9 +44,6 @@ func TestValidateAuditSink(t *testing.T) {
 				Spec: auditregistration.AuditSinkSpec{
 					Policy: auditregistration.Policy{
 						Level: auditregistration.LevelRequest,
-						Stages: []auditregistration.Stage{
-							auditregistration.StageRequestReceived,
-						},
 					},
 					Webhook: auditregistration.Webhook{
 						Throttle: &auditregistration.WebhookThrottleConfig{
@@ -85,9 +82,6 @@ func TestValidateAuditSink(t *testing.T) {
 				Spec: auditregistration.AuditSinkSpec{
 					Policy: auditregistration.Policy{
 						Level: auditregistration.LevelMetadata,
-						Stages: []auditregistration.Stage{
-							auditregistration.StageRequestReceived,
-						},
 					},
 				},
 			},
@@ -105,14 +99,18 @@ func TestValidateAuditSink(t *testing.T) {
 
 func TestValidatePolicy(t *testing.T) {
 	successCases := []auditregistration.Policy{}
-	successCases = append(successCases, auditregistration.Policy{ // Policy with omitStages and level
+	successCases = append(successCases, auditregistration.Policy{ // Policy with level only
+		Level: auditregistration.LevelNone,
+	})
+	successCases = append(successCases, auditregistration.Policy{ // Policy with level and rule
 		Level: auditregistration.LevelRequest,
-		Stages: []auditregistration.Stage{
-			auditregistration.Stage("RequestReceived"),
-			auditregistration.Stage("ResponseStarted"),
+		Rules: []auditregistration.PolicyRule{
+			{
+				WithAuditClass: "sample",
+				Level:          auditregistration.LevelRequest,
+			},
 		},
 	})
-	successCases = append(successCases, auditregistration.Policy{Level: auditregistration.LevelNone}) // Policy with none level only
 
 	for i, policy := range successCases {
 		if errs := ValidatePolicy(policy, field.NewPath("policy")); len(errs) != 0 {
@@ -120,12 +118,42 @@ func TestValidatePolicy(t *testing.T) {
 		}
 	}
 
-	errorCases := []auditregistration.Policy{}
-	errorCases = append(errorCases, auditregistration.Policy{})                                 // Empty policy                                      // Policy with missing level
-	errorCases = append(errorCases, auditregistration.Policy{Stages: []auditregistration.Stage{ // Policy with invalid stages
-		auditregistration.Stage("Bad")}})
+	errorCases := []auditregistration.Policy{} 
+	errorCases = append(errorCases, auditregistration.Policy{}) // Policy with missing level
+	errorCases = append(errorCases, auditregistration.Policy{ // Policy with rule and without global level
+		Rules: []auditregistration.PolicyRule{
+			{
+				WithAuditClass: "test",
+				Level:          auditregistration.LevelRequest,
+			},
+		},
+	}) 
 	errorCases = append(errorCases, auditregistration.Policy{Level: auditregistration.Level("invalid")}) // Policy with bad level
-	errorCases = append(errorCases, auditregistration.Policy{Level: auditregistration.LevelMetadata})    // Policy without stages
+	errorCases = append(errorCases, auditregistration.Policy{                                            // PolicyRule with bad level
+		Level: auditregistration.LevelRequest,
+		Rules: []auditregistration.PolicyRule{
+			{
+				WithAuditClass: "test",
+				Level:          auditregistration.Level("invalid"),
+			},
+		},
+	})
+	errorCases = append(errorCases, auditregistration.Policy{ // PolicyRule without level
+		Level: auditregistration.LevelRequest,
+		Rules: []auditregistration.PolicyRule{
+			{
+				WithAuditClass: "test",
+			},
+		},
+	})
+	errorCases = append(errorCases, auditregistration.Policy{ // PolicyRule rule without class reference
+		Level: auditregistration.LevelRequest,
+		Rules: []auditregistration.PolicyRule{
+			{
+				Level:   auditregistration.Level("invalid"),
+			},
+		},
+	})
 
 	for i, policy := range errorCases {
 		if errs := ValidatePolicy(policy, field.NewPath("policy")); len(errs) == 0 {
@@ -134,7 +162,113 @@ func TestValidatePolicy(t *testing.T) {
 	}
 }
 
-func TestValidateWebhookConfiguration(t *testing.T) {
+func TestAuditClass(t *testing.T) {
+
+	validClass:= auditregistration.AuditClass{
+		Spec: auditregistration.AuditClassSpec{
+			RequestSelectors : []auditregistration.RequestSelector{
+				{ // Matching non-humans
+					UserGroups: []string{"system:serviceaccounts", "system:nodes"},
+				},
+				{ // Matching user accounts
+					Users: []string{"system:administrator"},
+				},
+				{ // Matching verbs
+					Verbs: []string{"create", "update"},
+				},
+				{ // Matching combination
+					Verbs: []string{"delete"},
+					Users: []string{"system:administrator"},
+				},
+			},
+			ResourceSelectors : []auditregistration.ResourceSelector{
+				{ // Specific request for namespaced resources
+					RequestSelector: auditregistration.RequestSelector {
+						Verbs:      []string{"get"},
+					},
+					Resources:  []auditregistration.GroupResources{{Group: "rbac.authorization.k8s.io", Resources: []string{"roles", "rolebindings"}}},
+					Namespaces: []string{"kube-system"},
+				},
+			},
+			ClusterResourceSelectors : []auditregistration.ClusterResourceSelector{
+				{ // Specific request for cluster resource 
+					RequestSelector: auditregistration.RequestSelector {
+						Verbs:      []string{"get"},
+					},
+					Resources:  []auditregistration.GroupResources{{Group: "rbac.authorization.k8s.io", Resources: []string{"clusterrolebindings"}}},
+				},
+			},
+			NonResourceSelectors : []auditregistration.NonResourceSelector{
+				{ // Some non-resource URLs
+					RequestSelector: auditregistration.RequestSelector {
+						UserGroups: []string{"developers"},
+					},
+					NonResourceURLs: []string{
+						"/logs*",
+						"/healthz*",
+						"/metrics",
+						"*",
+					},
+				},
+			},
+		},	
+	}
+
+	if errs := ValidateAuditClass(validClass); len(errs) != 0 {
+		t.Errorf("Expected class %#v to be valid: %v", validClass, errs)
+	}
+
+	invalidClass := auditregistration.AuditClass{
+		Spec: auditregistration.AuditClassSpec{
+			ResourceSelectors: []auditregistration.ResourceSelector{
+				{ // invalid group name
+					Resources: []auditregistration.GroupResources{{Group: "rbac.authorization.k8s.io/v1beta1", Resources: []string{"roles"}}},
+				},
+				{ // ObjectNames without Resources
+					RequestSelector: auditregistration.RequestSelector{
+						Verbs:      []string{"get"},
+					},
+					Resources:  []auditregistration.GroupResources{{ObjectNames: []string{"leader"}}},
+					Namespaces: []string{"kube-system"},
+				},
+			},
+			NonResourceSelectors: []auditregistration.NonResourceSelector{
+				{ // invalid non-resource URLs
+					NonResourceURLs: []string{
+						"logs",
+						"/healthz*",
+					},
+				}, 
+				{ // empty non-resource URLs
+					NonResourceURLs: []string{
+						"",
+						"/healthz*",
+					},
+				},
+				{ // invalid non-resource URLs with multi "*"
+					NonResourceURLs: []string{
+						"/logs/*/*",
+						"/metrics",
+					},
+				},
+				{ // invalid non-resrouce URLs with "*" not in the end
+					NonResourceURLs: []string{
+						"/logs/*.log",
+						"/metrics",
+					},
+				},
+			},
+		},
+	}
+
+	if errs := ValidateAuditClass(invalidClass); len(errs) == 0 {
+		t.Errorf("Expected class %#v to be invalid!", invalidClass)
+	}
+}
+
+func strPtr(s string) *string { return &s }
+
+func TestValidateWebhook(t *testing.T) {
 	tests := []struct {
 		name          string
 		config        auditregistration.Webhook
