@@ -118,16 +118,16 @@ func TestValidatePolicy(t *testing.T) {
 		}
 	}
 
-	errorCases := []auditregistration.Policy{} 
+	errorCases := []auditregistration.Policy{}
 	errorCases = append(errorCases, auditregistration.Policy{}) // Policy with missing level
-	errorCases = append(errorCases, auditregistration.Policy{ // Policy with rule and without global level
+	errorCases = append(errorCases, auditregistration.Policy{   // Policy with rule and without global level
 		Rules: []auditregistration.PolicyRule{
 			{
 				WithAuditClass: "test",
 				Level:          auditregistration.LevelRequest,
 			},
 		},
-	}) 
+	})
 	errorCases = append(errorCases, auditregistration.Policy{Level: auditregistration.Level("invalid")}) // Policy with bad level
 	errorCases = append(errorCases, auditregistration.Policy{                                            // PolicyRule with bad level
 		Level: auditregistration.LevelRequest,
@@ -150,7 +150,7 @@ func TestValidatePolicy(t *testing.T) {
 		Level: auditregistration.LevelRequest,
 		Rules: []auditregistration.PolicyRule{
 			{
-				Level:   auditregistration.Level("invalid"),
+				Level: auditregistration.Level("invalid"),
 			},
 		},
 	})
@@ -164,54 +164,98 @@ func TestValidatePolicy(t *testing.T) {
 
 func TestAuditClass(t *testing.T) {
 
-	validClass:= auditregistration.AuditClass{
+	validClass := auditregistration.AuditClass{
 		Spec: auditregistration.AuditClassSpec{
-			RequestSelectors : []auditregistration.RequestSelector{
+			Rules: []auditregistration.Rule{
 				{ // Matching non-humans
-					UserGroups: []string{"system:serviceaccounts", "system:nodes"},
+					BaseSelector: auditregistration.BaseSelector {
+						UserGroups: []string{"system:serviceaccounts", "system:nodes"},
+					},
 				},
 				{ // Matching user accounts
-					Users: []string{"system:administrator"},
+					BaseSelector: auditregistration.BaseSelector {
+						Users: []string{"system:administrator"},
+					},
+				},
+				{ // Matching user accounts
+					BaseSelector: auditregistration.BaseSelector {
+						Users: []string{"system:administrator"},
+					},
 				},
 				{ // Matching verbs
-					Verbs: []string{"create", "update"},
+					BaseSelector: auditregistration.BaseSelector {
+						Verbs: []string{"create", "update"},
+					},
 				},
 				{ // Matching combination
-					Verbs: []string{"delete"},
-					Users: []string{"system:administrator"},
+					BaseSelector: auditregistration.BaseSelector {
+						Verbs: []string{"delete"},
+						Users: []string{"system:administrator"},
+					},
 				},
-			},
-			ResourceSelectors : []auditregistration.ResourceSelector{
 				{ // Specific request for namespaced resources
-					RequestSelector: auditregistration.RequestSelector {
-						Verbs:      []string{"get"},
+					BaseSelector: auditregistration.BaseSelector {
+						Verbs: []string{"get"},
 					},
-					Resources:  []auditregistration.GroupResources{{Group: "rbac.authorization.k8s.io", Resources: []string{"roles", "rolebindings"}}},
-					Namespaces: []string{"kube-system"},
-				},
-			},
-			ClusterResourceSelectors : []auditregistration.ClusterResourceSelector{
-				{ // Specific request for cluster resource 
-					RequestSelector: auditregistration.RequestSelector {
-						Verbs:      []string{"get"},
+					RequestSelector: auditregistration.RequestSelector{
+						GroupResourceSelectors: []auditregistration.GroupResourceSelector{
+							{
+								Group: "rbac.authorization.k8s.io", 
+								Resources: []auditregistration.ResourceSelector {
+									{
+										Kind: "roles", 
+									},
+									{
+										Kind:"rolebindings",
+									},
+								},
+								Scope: auditregistration.ScopeSelector{
+									Scope: "namespace",
+									Namespaces: []auditregistration.NamespaceSelector{"kube-system"},
+								},
+							},
+						},
 					},
-					Resources:  []auditregistration.GroupResources{{Group: "rbac.authorization.k8s.io", Resources: []string{"clusterrolebindings"}}},
 				},
-			},
-			NonResourceSelectors : []auditregistration.NonResourceSelector{
+				{ // Specific request for cluster resource
+					BaseSelector: auditregistration.BaseSelector {
+						Verbs: []string{"get"},
+					},
+					RequestSelector: auditregistration.RequestSelector{
+						GroupResourceSelectors: []auditregistration.GroupResourceSelector{
+							{
+								Group: "rbac.authorization.k8s.io", 
+								Resources: []auditregistration.ResourceSelector {
+									{
+										Kind: "clusterrolebindings", 
+									},
+								},
+								Scope: auditregistration.ScopeSelector{
+									Scope: "cluster",
+								},
+							},
+						},
+					},
+				},
 				{ // Some non-resource URLs
-					RequestSelector: auditregistration.RequestSelector {
+					BaseSelector: auditregistration.BaseSelector {
 						UserGroups: []string{"developers"},
 					},
-					NonResourceURLs: []string{
-						"/logs*",
-						"/healthz*",
-						"/metrics",
-						"*",
-					},
+					RequestSelector: auditregistration.RequestSelector{
+						NonResourceSelectors: []auditregistration.NonResourceSelector{
+							{
+								URLs: []string{
+									"/logs*",
+									"/healthz*",
+									"/metrics",
+									"*",
+								},
+							},
+						},
+					},					
 				},
 			},
-		},	
+		},
 	}
 
 	if errs := ValidateAuditClass(validClass); len(errs) != 0 {
@@ -220,41 +264,70 @@ func TestAuditClass(t *testing.T) {
 
 	invalidClass := auditregistration.AuditClass{
 		Spec: auditregistration.AuditClassSpec{
-			ResourceSelectors: []auditregistration.ResourceSelector{
+			Rules: []auditregistration.Rule{
 				{ // invalid group name
-					Resources: []auditregistration.GroupResources{{Group: "rbac.authorization.k8s.io/v1beta1", Resources: []string{"roles"}}},
+					RequestSelector: auditregistration.RequestSelector{
+						GroupResourceSelectors: []auditregistration.GroupResourceSelector{
+							{
+								Group: "rbac.authorization.k8s.io/v1beta1", 
+								Resources: []auditregistration.ResourceSelector {
+									{
+										Kind: "roles", 
+									},
+								},
+							},
+						},
+					},
 				},
 				{ // ObjectNames without Resources
+					BaseSelector: auditregistration.BaseSelector {
+						Verbs: []string{"get"},
+					},
 					RequestSelector: auditregistration.RequestSelector{
-						Verbs:      []string{"get"},
-					},
-					Resources:  []auditregistration.GroupResources{{ObjectNames: []string{"leader"}}},
-					Namespaces: []string{"kube-system"},
-				},
-			},
-			NonResourceSelectors: []auditregistration.NonResourceSelector{
-				{ // invalid non-resource URLs
-					NonResourceURLs: []string{
-						"logs",
-						"/healthz*",
-					},
-				}, 
-				{ // empty non-resource URLs
-					NonResourceURLs: []string{
-						"",
-						"/healthz*",
+						GroupResourceSelectors: []auditregistration.GroupResourceSelector{
+							{
+								Group: "rbac.authorization.k8s.io", 
+								Resources: []auditregistration.ResourceSelector {
+									{
+										ObjectNames: []string{"leader"},
+									},
+								},
+								Scope: auditregistration.ScopeSelector{
+									Scope: "namespace",
+									Namespaces: []auditregistration.NamespaceSelector{"kube-system"},
+								},
+							},
+						},
 					},
 				},
-				{ // invalid non-resource URLs with multi "*"
-					NonResourceURLs: []string{
-						"/logs/*/*",
-						"/metrics",
-					},
-				},
-				{ // invalid non-resrouce URLs with "*" not in the end
-					NonResourceURLs: []string{
-						"/logs/*.log",
-						"/metrics",
+				{
+					RequestSelector: auditregistration.RequestSelector{
+						NonResourceSelectors: []auditregistration.NonResourceSelector{
+							{ // invalid non-resource URLs
+								URLs: []string{
+									"logs",
+									"/healthz*",
+								},
+							},
+							{ // empty non-resource URLs
+								URLs: []string{
+									"",
+									"/healthz*",
+								},
+							},
+							{ // invalid non-resource URLs with multi "*"
+								URLs: []string{
+									"/logs/*/*",
+									"/metrics",
+								},
+							},
+							{ // invalid non-resrouce URLs with "*" not in the end
+								URLs: []string{
+									"/logs/*.log",
+									"/metrics",
+								},
+							},
+						},
 					},
 				},
 			},

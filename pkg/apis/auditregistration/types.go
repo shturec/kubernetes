@@ -198,10 +198,12 @@ type ServiceReference struct {
 // +genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// AuditClass is a set of rules that categorize requests
+// AuditClass is a set of rules that match a category of requests. Policies 
+// can reference and set a level of detail for auditing request categories 
+// defined by such AuditClass objects. 
 //
-// This should be considered a highly privileged object, as modifying it
-// will change what is logged.
+// Operations on AuditClass objects should be considered highly privileged, 
+// as modifying them affects which requests are audited.
 type AuditClass struct {
 	metav1.TypeMeta
 	// +optional
@@ -225,102 +227,123 @@ type AuditClassList struct {
 
 // AuditClassSpec is the spec for the `auditClass` object.
 type AuditClassSpec struct {
-	// `requestSelectors` defines a list of `requestSelector` objects. Only one must match.
+	// 'rules' is the list of rules for matching a category of requests.
+	Rules []Rule
+}
+
+// Rule defines a criteria for selecting requests for a class, by matching
+// their attributes.
+type Rule struct {
 	// +optional
-	RequestSelectors []RequestSelector
+	BaseSelector
 	// +optional
-	ResourceSelectors []ResourceSelector
+	RequestSelector
+}
+
+// BaseSelector is a criteria for matching requests by common attributes.
+type BaseSelector struct {
+	// `users` is a list of user names used to match 
+	// authenticated user in a request, e.g. `system:anonymous`.
+	// An empty list or undefined `users` implies any user.
 	// +optional
-	ClusterResourceSelectors []ClusterResourceSelector
+	Users []string
+	// `userGroups` is a list of user group names used to
+	//  match the user group of a user in a request, e.g.
+	// `system:unauthenticated`. A user is considered 
+	// matching if it is a member of any of the `userGroups`.
+	// An empty list implies any user group.
+	// +optional
+	UserGroups []string
+	// `verbs` is a list of verb names used to match the request verb,
+	// e.g. `list`, `create`, `watch` for resource requests or `post`,
+	// `put`,`delete` for non-resource requests.
+	// An empty list implies any verb.
+	// +optional
+	Verbs []string
+}
+
+// RequestSelector is a union of different types of request matching criteria lists.
+// Only one must be defined at a time, i.e. either `groupResourceSelectors` or 
+// `nonResourceSelectors` element is permitted.
+// +union
+type RequestSelector struct {
+	// `groupResourceSelectors` is a list of selectors matching 
+	// API group resources.
+	// +optional
+	GroupResourceSelectors []GroupResourceSelector
+	// `nonResourceSelectors` is a list of selectors matching 
+	// requests that are not related to API resources.
 	// +optional
 	NonResourceSelectors []NonResourceSelector
 }
 
-// RequestSelector selects requests by matching on the given fields. Selectors are
-// used to compose `auditClass` objects.
-type RequestSelector struct {
-	// `users` (by authenticated user name) in this selector.
-	// An empty list implies every user.
-	// This list should not exceed 100 items, if you need more, use another request selector.
+// GroupResourceSelector matches requests for resources in API groups.
+type GroupResourceSelector struct {
+	// `group` is an API resource group, e.g. `rbac.authorization.k8s.io`.
+	// Use "" for the default group.
 	// +optional
-	Users []string
-
-	// `userGroups` in this selector. A user is considered matching
-	// if it is a member of any of the `userGroups`.
-	// An empty list implies every user group.
+	Group string
+	// `resources` is a list of selectors matching various API 
+	// resource kinds. If `group` is defined, they must be members
+	// of the group.
 	// +optional
-	UserGroups []string
-
-	// `verbs` included in this selector.
-	// An empty list implies every verb.
+	Resources []ResourceSelector
+	// `scope` indicates the scope of the request - cluster, namespaced or any. 
+	// In case of namespaced resource requests, it can specify the namespace too.
 	// +optional
-	Verbs []string
+	Scope ScopeSelector
 }
+
+// ResourceSelector matches requests by API resources.
 type ResourceSelector struct {
+	// `kind` is the resource kind, e.g. "pods"
+	Kind string
+	// `subresources` is a list of subresources of this resource `kind`.
+	// nil = no subresources.
+	// '*' = all subresources & non-subresourced
+	// '' = non-subresourced
 	// +optional
-	RequestSelector
-
-	// `namespaces` in this selector.
-	// The empty string "" matches non-namespaced resources.
-	// An empty list implies every namespace.
-	// Non-namespaced resources will be matched if and only if the empty string is present in the list
+	Subresources []string
+	// `objectNames` is a list of names of the objects of this resource kind.
 	// +optional
-	Namespaces []string
-
-	// `resources` in this selector. An empty list implies all kinds in all API groups.
-	// +optional
-	Resources []GroupResources
+	ObjectNames []string
 }
 
-type ClusterResourceSelector struct {
+// ScopeSelector matches requests by API resources scope.
+// +union
+type ScopeSelector struct {
+	// `scope` is scope of a resource. It can be one of `Cluster`, 
+	// `Namespaced` or `Any` (default if scope is not defined).
+	// +unionDiscriminator
+	// +optional 
+	Scope ScopeType
+	// `namespaces` is a list of namespace selectors
 	// +optional
-	RequestSelector
-
-	// `resources` in this selector. An empty list implies all kinds in all API groups.
-	// +optional
-	Resources []GroupResources
+	Namespaces []NamespaceSelector
 }
 
+type ScopeType string
+
+const (
+	ScopeTypeAny = "Any" // default
+	ScopeTypeCluster = "Cluster"
+	ScopeTypeNamespaced = "Namespaced"
+)
+
+// NamespaceSelector matches requests by namespace.
+type NamespaceSelector struct {
+	// `name` is the namespace name
+	Name string
+}
+
+// NonResourceSelector selects requests that do not target API resources.
 type NonResourceSelector struct {
-	// +optional
-	RequestSelector
-
-	// `nonResourceURLs` is a set of URL paths that should be audited.
-	// *s are allowed, but only as the full, final step in the path, and are delimited by the path separator
+	// `urls` is a set of URL paths that should be audited.
+	// The `*` is allowed, but only as the full, final step in the path, 
+	// and it is delimited by the path separator
 	// Examples:
 	//  "/metrics" - Log requests for apiserver metrics
 	//  "/healthz/*" - Log all health checks
 	// +optional
-	NonResourceURLs []string
-}
-
-// GroupResources represents resource kinds in an API group.
-type GroupResources struct {
-	// `group` is the name of the API group that contains the resources.
-	// The empty string represents the core API group.
-	// +optional
-	Group string
-
-	// `resources` is a list of resources in this group.
-	//
-	// For example:
-	// 'pods' matches pods.
-	// 'pods/log' matches the log subresource of pods.
-	// '*' matches all resources and their subresources.
-	// 'pods/*' matches all subresources of pods.
-	// 'pods*' would not match any subresources of pods because it is before the path separator.
-	// '*/scale' matches all scale subresources.
-	//
-	// If wildcard is present, the validation rule will ensure resources do not
-	// overlap with each other.
-	//
-	// An empty list implies all resources and subresources in these API groups apply.
-	// +optional
-	Resources []string
-
-	// `objectNames` is a list of resource instance names in this group.
-	// Using this field requires resources to be specified.
-	// An empty list implies that every instance of the resource is matched.
-	// +optional
-	ObjectNames []string
+	URLs []string
 }

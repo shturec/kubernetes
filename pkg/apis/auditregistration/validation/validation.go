@@ -98,20 +98,24 @@ func ValidateAuditClass(class auditregistration.AuditClass) field.ErrorList {
 	var allErrs field.ErrorList
 	fldPath := field.NewPath("spec")
 
-	// Having all selectors empty is like not selecting any particular request. 
-	// There is an implicit catch-all rule assigned the global level that does that. 
+	// Having all selectors empty is like not selecting any particular request.
+	// There is an implicit catch-all rule assigned the global level that does that.
 	// Explict definition of roles that do the same is discouraged.
-	if len(class.Spec.RequestSelectors)==0 && len(class.Spec.ResourceSelectors)==0 && len(class.Spec.ClusterResourceSelectors)==0 && len(class.Spec.NonResourceSelectors)==0 {
-		allErrs = append(allErrs, field.Invalid(fldPath, class.Spec, "at least one selector is required"))
+	if len(class.Spec.Rules) == 0 {
+		allErrs = append(allErrs, field.Invalid(fldPath, class.Spec, "at least one rule is required"))
 	}
-	for _, resourceSelector := range class.Spec.ResourceSelectors {
-		allErrs = append(allErrs, validateResources(resourceSelector.Resources, fldPath.Child("resourceSelectors").Child("resources"))...)	
-	}
-	for _, clusterResourceSelector := range class.Spec.ClusterResourceSelectors {
-		allErrs = append(allErrs, validateResources(clusterResourceSelector.Resources, fldPath.Child("clusterResourceSelector").Child("resources"))...)
-	}
-	for _, nonResourceSelector := range class.Spec.NonResourceSelectors {
-		allErrs = append(allErrs, validateNonResourceURLs(nonResourceSelector.NonResourceURLs, fldPath.Child("nonResourceSelectors").Child("nonResourceURLs"))...)
+	for _, rule := range class.Spec.Rules {
+		if len(rule.GroupResourceSelectors) > 0 && len(rule.NonResourceSelectors) > 0 {
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("rules"), class.Spec.Rules, "only one of GroupResourceSelectors or NonResourceSelectors must be specified"))
+		}
+		if len(rule.GroupResourceSelectors) > 0 {
+			allErrs = append(allErrs, validateGroupResources(rule.GroupResourceSelectors, fldPath.Child("rules").Child("groupResourceSelectors"))...)
+		}
+		if len(rule.NonResourceSelectors) > 0 {
+			for _, selector := range rule.NonResourceSelectors {
+				allErrs = append(allErrs, validateNonResourceURLs(selector.URLs, fldPath.Child("nonResourceSelectors").Child("urls"))...)
+			}
+		}
 	}
 	return allErrs
 }
@@ -151,7 +155,7 @@ func validateNonResourceURLs(urls []string, fldPath *field.Path) field.ErrorList
 	return allErrs
 }
 
-func validateResources(groupResources []auditregistration.GroupResources, fldPath *field.Path) field.ErrorList {
+func validateGroupResources(groupResources []auditregistration.GroupResourceSelector, fldPath *field.Path) field.ErrorList {
 	var allErrs field.ErrorList
 	for _, groupResource := range groupResources {
 		// The empty string represents the core API group.
@@ -165,8 +169,10 @@ func validateResources(groupResources []auditregistration.GroupResources, fldPat
 			}
 		}
 
-		if len(groupResource.ObjectNames) > 0 && len(groupResource.Resources) == 0 {
-			allErrs = append(allErrs, field.Invalid(fldPath.Child("objectNames"), groupResource.ObjectNames, "using objectNames requires at least one resource"))
+		for _, resourceSelector := range groupResource.Resources {
+			if len(resourceSelector.ObjectNames) > 0 && resourceSelector.Kind == "" {
+				allErrs = append(allErrs, field.Invalid(fldPath.Child("objectNames"), resourceSelector.ObjectNames, "using objectNames requires resource kind to be specified too"))
+			}
 		}
 	}
 	return allErrs

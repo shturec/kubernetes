@@ -97,23 +97,33 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*v1alpha1.ClusterResourceSelector)(nil), (*auditregistration.ClusterResourceSelector)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_ClusterResourceSelector_To_auditregistration_ClusterResourceSelector(a.(*v1alpha1.ClusterResourceSelector), b.(*auditregistration.ClusterResourceSelector), scope)
+	if err := s.AddGeneratedConversionFunc((*v1alpha1.BaseSelector)(nil), (*auditregistration.BaseSelector)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_BaseSelector_To_auditregistration_BaseSelector(a.(*v1alpha1.BaseSelector), b.(*auditregistration.BaseSelector), scope)
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*auditregistration.ClusterResourceSelector)(nil), (*v1alpha1.ClusterResourceSelector)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_auditregistration_ClusterResourceSelector_To_v1alpha1_ClusterResourceSelector(a.(*auditregistration.ClusterResourceSelector), b.(*v1alpha1.ClusterResourceSelector), scope)
+	if err := s.AddGeneratedConversionFunc((*auditregistration.BaseSelector)(nil), (*v1alpha1.BaseSelector)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_auditregistration_BaseSelector_To_v1alpha1_BaseSelector(a.(*auditregistration.BaseSelector), b.(*v1alpha1.BaseSelector), scope)
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*v1alpha1.GroupResources)(nil), (*auditregistration.GroupResources)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_GroupResources_To_auditregistration_GroupResources(a.(*v1alpha1.GroupResources), b.(*auditregistration.GroupResources), scope)
+	if err := s.AddGeneratedConversionFunc((*v1alpha1.GroupResourceSelector)(nil), (*auditregistration.GroupResourceSelector)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_GroupResourceSelector_To_auditregistration_GroupResourceSelector(a.(*v1alpha1.GroupResourceSelector), b.(*auditregistration.GroupResourceSelector), scope)
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*auditregistration.GroupResources)(nil), (*v1alpha1.GroupResources)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_auditregistration_GroupResources_To_v1alpha1_GroupResources(a.(*auditregistration.GroupResources), b.(*v1alpha1.GroupResources), scope)
+	if err := s.AddGeneratedConversionFunc((*auditregistration.GroupResourceSelector)(nil), (*v1alpha1.GroupResourceSelector)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_auditregistration_GroupResourceSelector_To_v1alpha1_GroupResourceSelector(a.(*auditregistration.GroupResourceSelector), b.(*v1alpha1.GroupResourceSelector), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*v1alpha1.NamespaceSelector)(nil), (*auditregistration.NamespaceSelector)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_NamespaceSelector_To_auditregistration_NamespaceSelector(a.(*v1alpha1.NamespaceSelector), b.(*auditregistration.NamespaceSelector), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*auditregistration.NamespaceSelector)(nil), (*v1alpha1.NamespaceSelector)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_auditregistration_NamespaceSelector_To_v1alpha1_NamespaceSelector(a.(*auditregistration.NamespaceSelector), b.(*v1alpha1.NamespaceSelector), scope)
 	}); err != nil {
 		return err
 	}
@@ -164,6 +174,26 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}
 	if err := s.AddGeneratedConversionFunc((*auditregistration.ResourceSelector)(nil), (*v1alpha1.ResourceSelector)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_auditregistration_ResourceSelector_To_v1alpha1_ResourceSelector(a.(*auditregistration.ResourceSelector), b.(*v1alpha1.ResourceSelector), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*v1alpha1.Rule)(nil), (*auditregistration.Rule)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_Rule_To_auditregistration_Rule(a.(*v1alpha1.Rule), b.(*auditregistration.Rule), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*auditregistration.Rule)(nil), (*v1alpha1.Rule)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_auditregistration_Rule_To_v1alpha1_Rule(a.(*auditregistration.Rule), b.(*v1alpha1.Rule), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*v1alpha1.ScopeSelector)(nil), (*auditregistration.ScopeSelector)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_ScopeSelector_To_auditregistration_ScopeSelector(a.(*v1alpha1.ScopeSelector), b.(*auditregistration.ScopeSelector), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*auditregistration.ScopeSelector)(nil), (*v1alpha1.ScopeSelector)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_auditregistration_ScopeSelector_To_v1alpha1_ScopeSelector(a.(*auditregistration.ScopeSelector), b.(*v1alpha1.ScopeSelector), scope)
 	}); err != nil {
 		return err
 	}
@@ -259,10 +289,7 @@ func Convert_auditregistration_AuditClassList_To_v1alpha1_AuditClassList(in *aud
 }
 
 func autoConvert_v1alpha1_AuditClassSpec_To_auditregistration_AuditClassSpec(in *v1alpha1.AuditClassSpec, out *auditregistration.AuditClassSpec, s conversion.Scope) error {
-	out.RequestSelectors = *(*[]auditregistration.RequestSelector)(unsafe.Pointer(&in.RequestSelectors))
-	out.ResourceSelectors = *(*[]auditregistration.ResourceSelector)(unsafe.Pointer(&in.ResourceSelectors))
-	out.ClusterResourceSelectors = *(*[]auditregistration.ClusterResourceSelector)(unsafe.Pointer(&in.ClusterResourceSelectors))
-	out.NonResourceSelectors = *(*[]auditregistration.NonResourceSelector)(unsafe.Pointer(&in.NonResourceSelectors))
+	out.Rules = *(*[]auditregistration.Rule)(unsafe.Pointer(&in.Rules))
 	return nil
 }
 
@@ -272,10 +299,7 @@ func Convert_v1alpha1_AuditClassSpec_To_auditregistration_AuditClassSpec(in *v1a
 }
 
 func autoConvert_auditregistration_AuditClassSpec_To_v1alpha1_AuditClassSpec(in *auditregistration.AuditClassSpec, out *v1alpha1.AuditClassSpec, s conversion.Scope) error {
-	out.RequestSelectors = *(*[]v1alpha1.RequestSelector)(unsafe.Pointer(&in.RequestSelectors))
-	out.ResourceSelectors = *(*[]v1alpha1.ResourceSelector)(unsafe.Pointer(&in.ResourceSelectors))
-	out.ClusterResourceSelectors = *(*[]v1alpha1.ClusterResourceSelector)(unsafe.Pointer(&in.ClusterResourceSelectors))
-	out.NonResourceSelectors = *(*[]v1alpha1.NonResourceSelector)(unsafe.Pointer(&in.NonResourceSelectors))
+	out.Rules = *(*[]v1alpha1.Rule)(unsafe.Pointer(&in.Rules))
 	return nil
 }
 
@@ -382,61 +406,80 @@ func Convert_auditregistration_AuditSinkSpec_To_v1alpha1_AuditSinkSpec(in *audit
 	return autoConvert_auditregistration_AuditSinkSpec_To_v1alpha1_AuditSinkSpec(in, out, s)
 }
 
-func autoConvert_v1alpha1_ClusterResourceSelector_To_auditregistration_ClusterResourceSelector(in *v1alpha1.ClusterResourceSelector, out *auditregistration.ClusterResourceSelector, s conversion.Scope) error {
-	if err := Convert_v1alpha1_RequestSelector_To_auditregistration_RequestSelector(&in.RequestSelector, &out.RequestSelector, s); err != nil {
+func autoConvert_v1alpha1_BaseSelector_To_auditregistration_BaseSelector(in *v1alpha1.BaseSelector, out *auditregistration.BaseSelector, s conversion.Scope) error {
+	out.Users = *(*[]string)(unsafe.Pointer(&in.Users))
+	out.UserGroups = *(*[]string)(unsafe.Pointer(&in.UserGroups))
+	out.Verbs = *(*[]string)(unsafe.Pointer(&in.Verbs))
+	return nil
+}
+
+// Convert_v1alpha1_BaseSelector_To_auditregistration_BaseSelector is an autogenerated conversion function.
+func Convert_v1alpha1_BaseSelector_To_auditregistration_BaseSelector(in *v1alpha1.BaseSelector, out *auditregistration.BaseSelector, s conversion.Scope) error {
+	return autoConvert_v1alpha1_BaseSelector_To_auditregistration_BaseSelector(in, out, s)
+}
+
+func autoConvert_auditregistration_BaseSelector_To_v1alpha1_BaseSelector(in *auditregistration.BaseSelector, out *v1alpha1.BaseSelector, s conversion.Scope) error {
+	out.Users = *(*[]string)(unsafe.Pointer(&in.Users))
+	out.UserGroups = *(*[]string)(unsafe.Pointer(&in.UserGroups))
+	out.Verbs = *(*[]string)(unsafe.Pointer(&in.Verbs))
+	return nil
+}
+
+// Convert_auditregistration_BaseSelector_To_v1alpha1_BaseSelector is an autogenerated conversion function.
+func Convert_auditregistration_BaseSelector_To_v1alpha1_BaseSelector(in *auditregistration.BaseSelector, out *v1alpha1.BaseSelector, s conversion.Scope) error {
+	return autoConvert_auditregistration_BaseSelector_To_v1alpha1_BaseSelector(in, out, s)
+}
+
+func autoConvert_v1alpha1_GroupResourceSelector_To_auditregistration_GroupResourceSelector(in *v1alpha1.GroupResourceSelector, out *auditregistration.GroupResourceSelector, s conversion.Scope) error {
+	out.Group = in.Group
+	out.Resources = *(*[]auditregistration.ResourceSelector)(unsafe.Pointer(&in.Resources))
+	if err := Convert_v1alpha1_ScopeSelector_To_auditregistration_ScopeSelector(&in.Scope, &out.Scope, s); err != nil {
 		return err
 	}
-	out.Resources = *(*[]auditregistration.GroupResources)(unsafe.Pointer(&in.Resources))
 	return nil
 }
 
-// Convert_v1alpha1_ClusterResourceSelector_To_auditregistration_ClusterResourceSelector is an autogenerated conversion function.
-func Convert_v1alpha1_ClusterResourceSelector_To_auditregistration_ClusterResourceSelector(in *v1alpha1.ClusterResourceSelector, out *auditregistration.ClusterResourceSelector, s conversion.Scope) error {
-	return autoConvert_v1alpha1_ClusterResourceSelector_To_auditregistration_ClusterResourceSelector(in, out, s)
+// Convert_v1alpha1_GroupResourceSelector_To_auditregistration_GroupResourceSelector is an autogenerated conversion function.
+func Convert_v1alpha1_GroupResourceSelector_To_auditregistration_GroupResourceSelector(in *v1alpha1.GroupResourceSelector, out *auditregistration.GroupResourceSelector, s conversion.Scope) error {
+	return autoConvert_v1alpha1_GroupResourceSelector_To_auditregistration_GroupResourceSelector(in, out, s)
 }
 
-func autoConvert_auditregistration_ClusterResourceSelector_To_v1alpha1_ClusterResourceSelector(in *auditregistration.ClusterResourceSelector, out *v1alpha1.ClusterResourceSelector, s conversion.Scope) error {
-	if err := Convert_auditregistration_RequestSelector_To_v1alpha1_RequestSelector(&in.RequestSelector, &out.RequestSelector, s); err != nil {
+func autoConvert_auditregistration_GroupResourceSelector_To_v1alpha1_GroupResourceSelector(in *auditregistration.GroupResourceSelector, out *v1alpha1.GroupResourceSelector, s conversion.Scope) error {
+	out.Group = in.Group
+	out.Resources = *(*[]v1alpha1.ResourceSelector)(unsafe.Pointer(&in.Resources))
+	if err := Convert_auditregistration_ScopeSelector_To_v1alpha1_ScopeSelector(&in.Scope, &out.Scope, s); err != nil {
 		return err
 	}
-	out.Resources = *(*[]v1alpha1.GroupResources)(unsafe.Pointer(&in.Resources))
 	return nil
 }
 
-// Convert_auditregistration_ClusterResourceSelector_To_v1alpha1_ClusterResourceSelector is an autogenerated conversion function.
-func Convert_auditregistration_ClusterResourceSelector_To_v1alpha1_ClusterResourceSelector(in *auditregistration.ClusterResourceSelector, out *v1alpha1.ClusterResourceSelector, s conversion.Scope) error {
-	return autoConvert_auditregistration_ClusterResourceSelector_To_v1alpha1_ClusterResourceSelector(in, out, s)
+// Convert_auditregistration_GroupResourceSelector_To_v1alpha1_GroupResourceSelector is an autogenerated conversion function.
+func Convert_auditregistration_GroupResourceSelector_To_v1alpha1_GroupResourceSelector(in *auditregistration.GroupResourceSelector, out *v1alpha1.GroupResourceSelector, s conversion.Scope) error {
+	return autoConvert_auditregistration_GroupResourceSelector_To_v1alpha1_GroupResourceSelector(in, out, s)
 }
 
-func autoConvert_v1alpha1_GroupResources_To_auditregistration_GroupResources(in *v1alpha1.GroupResources, out *auditregistration.GroupResources, s conversion.Scope) error {
-	out.Group = in.Group
-	out.Resources = *(*[]string)(unsafe.Pointer(&in.Resources))
-	out.ObjectNames = *(*[]string)(unsafe.Pointer(&in.ObjectNames))
+func autoConvert_v1alpha1_NamespaceSelector_To_auditregistration_NamespaceSelector(in *v1alpha1.NamespaceSelector, out *auditregistration.NamespaceSelector, s conversion.Scope) error {
+	out.Name = in.Name
 	return nil
 }
 
-// Convert_v1alpha1_GroupResources_To_auditregistration_GroupResources is an autogenerated conversion function.
-func Convert_v1alpha1_GroupResources_To_auditregistration_GroupResources(in *v1alpha1.GroupResources, out *auditregistration.GroupResources, s conversion.Scope) error {
-	return autoConvert_v1alpha1_GroupResources_To_auditregistration_GroupResources(in, out, s)
+// Convert_v1alpha1_NamespaceSelector_To_auditregistration_NamespaceSelector is an autogenerated conversion function.
+func Convert_v1alpha1_NamespaceSelector_To_auditregistration_NamespaceSelector(in *v1alpha1.NamespaceSelector, out *auditregistration.NamespaceSelector, s conversion.Scope) error {
+	return autoConvert_v1alpha1_NamespaceSelector_To_auditregistration_NamespaceSelector(in, out, s)
 }
 
-func autoConvert_auditregistration_GroupResources_To_v1alpha1_GroupResources(in *auditregistration.GroupResources, out *v1alpha1.GroupResources, s conversion.Scope) error {
-	out.Group = in.Group
-	out.Resources = *(*[]string)(unsafe.Pointer(&in.Resources))
-	out.ObjectNames = *(*[]string)(unsafe.Pointer(&in.ObjectNames))
+func autoConvert_auditregistration_NamespaceSelector_To_v1alpha1_NamespaceSelector(in *auditregistration.NamespaceSelector, out *v1alpha1.NamespaceSelector, s conversion.Scope) error {
+	out.Name = in.Name
 	return nil
 }
 
-// Convert_auditregistration_GroupResources_To_v1alpha1_GroupResources is an autogenerated conversion function.
-func Convert_auditregistration_GroupResources_To_v1alpha1_GroupResources(in *auditregistration.GroupResources, out *v1alpha1.GroupResources, s conversion.Scope) error {
-	return autoConvert_auditregistration_GroupResources_To_v1alpha1_GroupResources(in, out, s)
+// Convert_auditregistration_NamespaceSelector_To_v1alpha1_NamespaceSelector is an autogenerated conversion function.
+func Convert_auditregistration_NamespaceSelector_To_v1alpha1_NamespaceSelector(in *auditregistration.NamespaceSelector, out *v1alpha1.NamespaceSelector, s conversion.Scope) error {
+	return autoConvert_auditregistration_NamespaceSelector_To_v1alpha1_NamespaceSelector(in, out, s)
 }
 
 func autoConvert_v1alpha1_NonResourceSelector_To_auditregistration_NonResourceSelector(in *v1alpha1.NonResourceSelector, out *auditregistration.NonResourceSelector, s conversion.Scope) error {
-	if err := Convert_v1alpha1_RequestSelector_To_auditregistration_RequestSelector(&in.RequestSelector, &out.RequestSelector, s); err != nil {
-		return err
-	}
-	out.NonResourceURLs = *(*[]string)(unsafe.Pointer(&in.NonResourceURLs))
+	out.URLs = *(*[]string)(unsafe.Pointer(&in.URLs))
 	return nil
 }
 
@@ -446,10 +489,7 @@ func Convert_v1alpha1_NonResourceSelector_To_auditregistration_NonResourceSelect
 }
 
 func autoConvert_auditregistration_NonResourceSelector_To_v1alpha1_NonResourceSelector(in *auditregistration.NonResourceSelector, out *v1alpha1.NonResourceSelector, s conversion.Scope) error {
-	if err := Convert_auditregistration_RequestSelector_To_v1alpha1_RequestSelector(&in.RequestSelector, &out.RequestSelector, s); err != nil {
-		return err
-	}
-	out.NonResourceURLs = *(*[]string)(unsafe.Pointer(&in.NonResourceURLs))
+	out.URLs = *(*[]string)(unsafe.Pointer(&in.URLs))
 	return nil
 }
 
@@ -503,9 +543,8 @@ func Convert_auditregistration_PolicyRule_To_v1alpha1_PolicyRule(in *auditregist
 }
 
 func autoConvert_v1alpha1_RequestSelector_To_auditregistration_RequestSelector(in *v1alpha1.RequestSelector, out *auditregistration.RequestSelector, s conversion.Scope) error {
-	out.Users = *(*[]string)(unsafe.Pointer(&in.Users))
-	out.UserGroups = *(*[]string)(unsafe.Pointer(&in.UserGroups))
-	out.Verbs = *(*[]string)(unsafe.Pointer(&in.Verbs))
+	out.GroupResourceSelectors = *(*[]auditregistration.GroupResourceSelector)(unsafe.Pointer(&in.GroupResourceSelectors))
+	out.NonResourceSelectors = *(*[]auditregistration.NonResourceSelector)(unsafe.Pointer(&in.NonResourceSelectors))
 	return nil
 }
 
@@ -515,9 +554,8 @@ func Convert_v1alpha1_RequestSelector_To_auditregistration_RequestSelector(in *v
 }
 
 func autoConvert_auditregistration_RequestSelector_To_v1alpha1_RequestSelector(in *auditregistration.RequestSelector, out *v1alpha1.RequestSelector, s conversion.Scope) error {
-	out.Users = *(*[]string)(unsafe.Pointer(&in.Users))
-	out.UserGroups = *(*[]string)(unsafe.Pointer(&in.UserGroups))
-	out.Verbs = *(*[]string)(unsafe.Pointer(&in.Verbs))
+	out.GroupResourceSelectors = *(*[]v1alpha1.GroupResourceSelector)(unsafe.Pointer(&in.GroupResourceSelectors))
+	out.NonResourceSelectors = *(*[]v1alpha1.NonResourceSelector)(unsafe.Pointer(&in.NonResourceSelectors))
 	return nil
 }
 
@@ -527,11 +565,9 @@ func Convert_auditregistration_RequestSelector_To_v1alpha1_RequestSelector(in *a
 }
 
 func autoConvert_v1alpha1_ResourceSelector_To_auditregistration_ResourceSelector(in *v1alpha1.ResourceSelector, out *auditregistration.ResourceSelector, s conversion.Scope) error {
-	if err := Convert_v1alpha1_RequestSelector_To_auditregistration_RequestSelector(&in.RequestSelector, &out.RequestSelector, s); err != nil {
-		return err
-	}
-	out.Namespaces = *(*[]string)(unsafe.Pointer(&in.Namespaces))
-	out.Resources = *(*[]auditregistration.GroupResources)(unsafe.Pointer(&in.Resources))
+	out.Kind = in.Kind
+	out.Subresources = *(*[]string)(unsafe.Pointer(&in.Subresources))
+	out.ObjectNames = *(*[]string)(unsafe.Pointer(&in.ObjectNames))
 	return nil
 }
 
@@ -541,17 +577,67 @@ func Convert_v1alpha1_ResourceSelector_To_auditregistration_ResourceSelector(in 
 }
 
 func autoConvert_auditregistration_ResourceSelector_To_v1alpha1_ResourceSelector(in *auditregistration.ResourceSelector, out *v1alpha1.ResourceSelector, s conversion.Scope) error {
-	if err := Convert_auditregistration_RequestSelector_To_v1alpha1_RequestSelector(&in.RequestSelector, &out.RequestSelector, s); err != nil {
-		return err
-	}
-	out.Namespaces = *(*[]string)(unsafe.Pointer(&in.Namespaces))
-	out.Resources = *(*[]v1alpha1.GroupResources)(unsafe.Pointer(&in.Resources))
+	out.Kind = in.Kind
+	out.Subresources = *(*[]string)(unsafe.Pointer(&in.Subresources))
+	out.ObjectNames = *(*[]string)(unsafe.Pointer(&in.ObjectNames))
 	return nil
 }
 
 // Convert_auditregistration_ResourceSelector_To_v1alpha1_ResourceSelector is an autogenerated conversion function.
 func Convert_auditregistration_ResourceSelector_To_v1alpha1_ResourceSelector(in *auditregistration.ResourceSelector, out *v1alpha1.ResourceSelector, s conversion.Scope) error {
 	return autoConvert_auditregistration_ResourceSelector_To_v1alpha1_ResourceSelector(in, out, s)
+}
+
+func autoConvert_v1alpha1_Rule_To_auditregistration_Rule(in *v1alpha1.Rule, out *auditregistration.Rule, s conversion.Scope) error {
+	if err := Convert_v1alpha1_BaseSelector_To_auditregistration_BaseSelector(&in.BaseSelector, &out.BaseSelector, s); err != nil {
+		return err
+	}
+	if err := Convert_v1alpha1_RequestSelector_To_auditregistration_RequestSelector(&in.RequestSelector, &out.RequestSelector, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Convert_v1alpha1_Rule_To_auditregistration_Rule is an autogenerated conversion function.
+func Convert_v1alpha1_Rule_To_auditregistration_Rule(in *v1alpha1.Rule, out *auditregistration.Rule, s conversion.Scope) error {
+	return autoConvert_v1alpha1_Rule_To_auditregistration_Rule(in, out, s)
+}
+
+func autoConvert_auditregistration_Rule_To_v1alpha1_Rule(in *auditregistration.Rule, out *v1alpha1.Rule, s conversion.Scope) error {
+	if err := Convert_auditregistration_BaseSelector_To_v1alpha1_BaseSelector(&in.BaseSelector, &out.BaseSelector, s); err != nil {
+		return err
+	}
+	if err := Convert_auditregistration_RequestSelector_To_v1alpha1_RequestSelector(&in.RequestSelector, &out.RequestSelector, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Convert_auditregistration_Rule_To_v1alpha1_Rule is an autogenerated conversion function.
+func Convert_auditregistration_Rule_To_v1alpha1_Rule(in *auditregistration.Rule, out *v1alpha1.Rule, s conversion.Scope) error {
+	return autoConvert_auditregistration_Rule_To_v1alpha1_Rule(in, out, s)
+}
+
+func autoConvert_v1alpha1_ScopeSelector_To_auditregistration_ScopeSelector(in *v1alpha1.ScopeSelector, out *auditregistration.ScopeSelector, s conversion.Scope) error {
+	out.Scope = auditregistration.ScopeType(in.Scope)
+	out.Namespaces = *(*[]auditregistration.NamespaceSelector)(unsafe.Pointer(&in.Namespaces))
+	return nil
+}
+
+// Convert_v1alpha1_ScopeSelector_To_auditregistration_ScopeSelector is an autogenerated conversion function.
+func Convert_v1alpha1_ScopeSelector_To_auditregistration_ScopeSelector(in *v1alpha1.ScopeSelector, out *auditregistration.ScopeSelector, s conversion.Scope) error {
+	return autoConvert_v1alpha1_ScopeSelector_To_auditregistration_ScopeSelector(in, out, s)
+}
+
+func autoConvert_auditregistration_ScopeSelector_To_v1alpha1_ScopeSelector(in *auditregistration.ScopeSelector, out *v1alpha1.ScopeSelector, s conversion.Scope) error {
+	out.Scope = v1alpha1.ScopeType(in.Scope)
+	out.Namespaces = *(*[]v1alpha1.NamespaceSelector)(unsafe.Pointer(&in.Namespaces))
+	return nil
+}
+
+// Convert_auditregistration_ScopeSelector_To_v1alpha1_ScopeSelector is an autogenerated conversion function.
+func Convert_auditregistration_ScopeSelector_To_v1alpha1_ScopeSelector(in *auditregistration.ScopeSelector, out *v1alpha1.ScopeSelector, s conversion.Scope) error {
+	return autoConvert_auditregistration_ScopeSelector_To_v1alpha1_ScopeSelector(in, out, s)
 }
 
 func autoConvert_v1alpha1_ServiceReference_To_auditregistration_ServiceReference(in *v1alpha1.ServiceReference, out *auditregistration.ServiceReference, s conversion.Scope) error {
