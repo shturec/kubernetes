@@ -232,7 +232,12 @@ type AuditClassSpec struct {
 }
 
 // Rule defines a criteria for selecting requests for a class, by matching
-// their attributes.
+// their attributes. On any level in the rule definition selectors that are
+// sets are treated as criteria composed with OR, i.e. any successfully 
+// matching selector in a set qualifies the whole set as a positive hit. 
+// For example a request for configmap resources is successfully selected
+// by a resource selector list that includes configmaps, secrets adn pods 
+// altogether. 
 type Rule struct {
 	// +optional
 	BaseSelector
@@ -242,18 +247,10 @@ type Rule struct {
 
 // BaseSelector is a criteria for matching requests by common attributes.
 type BaseSelector struct {
-	// `users` is a list of user names used to match 
-	// authenticated user in a request, e.g. `system:anonymous`.
-	// An empty list or undefined `users` implies any user.
+	// `subjects` is a list of subject names used to match
+	// a request subject. Subject types can be `User` and `Group`.
 	// +optional
-	Users []string
-	// `userGroups` is a list of user group names used to
-	//  match the user group of a user in a request, e.g.
-	// `system:unauthenticated`. A user is considered 
-	// matching if it is a member of any of the `userGroups`.
-	// An empty list implies any user group.
-	// +optional
-	UserGroups []string
+	Subjects []SubjectSelector
 	// `verbs` is a list of verb names used to match the request verb,
 	// e.g. `list`, `create`, `watch` for resource requests or `post`,
 	// `put`,`delete` for non-resource requests.
@@ -261,6 +258,24 @@ type BaseSelector struct {
 	// +optional
 	Verbs []string
 }
+
+// SubjectSelector matches requests by a list of subject names for a request 
+// subject of a given type (`User` or `Group`).
+type SubjectSelector struct {
+	// `type` is the type of the subject. Can be `User` or `Group`.
+	Type SubjectType
+	// `names` is the set of subject names sed to match the request subject
+	Names []string
+}
+type SubjectType string
+const (
+	// SubjectTypeUser corresponds to the authenticated 
+	// user in a request, e.g. `system:anonymous`.
+	SubjectTypeUser = "User"
+	// SubjectTypeUserGroup corresponds to the  user group 
+	// in a request, e.g. `system:anonymous`.
+	SubjectTypeUserGroup  = "Group"
+) 
 
 // RequestSelector is a union of different types of request matching criteria lists.
 // Only one must be defined at a time, i.e. either `groupResourceSelectors` or 
@@ -291,7 +306,7 @@ type GroupResourceSelector struct {
 	// `scope` indicates the scope of the request - cluster, namespaced or any. 
 	// In case of namespaced resource requests, it can specify the namespace too.
 	// +optional
-	Scope ScopeSelector
+	ScopeSelector
 }
 
 // ResourceSelector matches requests by API resources.

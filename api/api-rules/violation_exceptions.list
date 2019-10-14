@@ -53,8 +53,7 @@ API rule violation: list_type_missing,k8s.io/api/apps/v1beta2,StatefulSetStatus,
 API rule violation: list_type_missing,k8s.io/api/auditregistration/v1alpha1,AuditClassList,Items
 API rule violation: list_type_missing,k8s.io/api/auditregistration/v1alpha1,AuditClassSpec,Rules
 API rule violation: list_type_missing,k8s.io/api/auditregistration/v1alpha1,AuditSinkList,Items
-API rule violation: list_type_missing,k8s.io/api/auditregistration/v1alpha1,BaseSelector,UserGroups
-API rule violation: list_type_missing,k8s.io/api/auditregistration/v1alpha1,BaseSelector,Users
+API rule violation: list_type_missing,k8s.io/api/auditregistration/v1alpha1,BaseSelector,Subjects
 API rule violation: list_type_missing,k8s.io/api/auditregistration/v1alpha1,BaseSelector,Verbs
 API rule violation: list_type_missing,k8s.io/api/auditregistration/v1alpha1,GroupResourceSelector,Resources
 API rule violation: list_type_missing,k8s.io/api/auditregistration/v1alpha1,NonResourceSelector,URLs
@@ -64,6 +63,7 @@ API rule violation: list_type_missing,k8s.io/api/auditregistration/v1alpha1,Requ
 API rule violation: list_type_missing,k8s.io/api/auditregistration/v1alpha1,ResourceSelector,ObjectNames
 API rule violation: list_type_missing,k8s.io/api/auditregistration/v1alpha1,ResourceSelector,Subresources
 API rule violation: list_type_missing,k8s.io/api/auditregistration/v1alpha1,ScopeSelector,Namespaces
+API rule violation: list_type_missing,k8s.io/api/auditregistration/v1alpha1,SubjectSelector,Names
 API rule violation: list_type_missing,k8s.io/api/auditregistration/v1alpha1,WebhookClientConfig,CABundle
 API rule violation: list_type_missing,k8s.io/api/authentication/v1,TokenRequestSpec,Audiences
 API rule violation: list_type_missing,k8s.io/api/authentication/v1,TokenReviewSpec,Audiences
@@ -504,7 +504,7 @@ API rule violation: list_type_missing,k8s.io/metrics/pkg/apis/metrics/v1beta1,No
 API rule violation: list_type_missing,k8s.io/metrics/pkg/apis/metrics/v1beta1,PodMetrics,Containers
 API rule violation: list_type_missing,k8s.io/metrics/pkg/apis/metrics/v1beta1,PodMetricsList,Items
 API rule violation: list_type_missing,k8s.io/node-api/pkg/apis/node/v1alpha1,RuntimeClassList,Items
-API rule violation: names_match,k8s.io/api/auditregistration/v1alpha1,AuditClassSpec,Rules
+API rule violation: names_match,k8s.io/api/auditregistration/v1alpha1,BaseSelector,Subjects
 API rule violation: names_match,k8s.io/api/auditregistration/v1alpha1,NonResourceSelector,URLs
 API rule violation: names_match,k8s.io/api/authorization/v1beta1,SubjectAccessReviewSpec,Groups
 API rule violation: names_match,k8s.io/api/core/v1,AzureDiskVolumeSource,DataDiskURI
